@@ -34,8 +34,8 @@ NaijaShield is an end-to-end fraud detection system designed to:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/fraud-detection-project.git
-   cd fraud-detection-project
+   git clone https://github.com/thedataboy001/naijashield
+   cd naijashield
    ```
 
 2. **Configure environment variables**
@@ -239,7 +239,7 @@ Track these metrics in Grafana:
 
 ## 📄 License
 
-[Your License Here]
+MIT License — see LICENSE for details.
 
 ## 👤 Author
 
@@ -250,5 +250,3 @@ Track these metrics in Grafana:
 For issues, questions, or suggestions, please open an GitHub issue or contact the maintainers.
 
 ---
-
-**Last Updated**: April 15, 2026
