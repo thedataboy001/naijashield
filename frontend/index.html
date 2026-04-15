@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NaijaShield — Fraud Detection</title>
+  <style>
+    /* ── Reset & Base ───────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green   : #4CAF50;
+      --red     : #F44336;
+      --orange  : #FF9800;
+      --blue    : #2196F3;
+      --pink    : #E91E63;
+      --dark    : #0f1117;
+      --card    : #1a1d27;
+      --border  : #2a2d3a;
+      --text    : #e0e0e0;
+      --muted   : #8b8fa8;
+      --radius  : 12px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background : var(--dark);
+      color      : var(--text);
+      min-height : 100vh;
+      padding    : 0 0 60px;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    header {
+      background    : linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+      border-bottom : 1px solid var(--border);
+      padding       : 20px 40px;
+      display       : flex;
+      align-items   : center;
+      gap           : 16px;
+      position      : sticky;
+      top           : 0;
+      z-index       : 100;
+    }
+
+    .logo {
+      font-size  : 1.6rem;
+      font-weight: 800;
+      background : linear-gradient(135deg, var(--pink), var(--blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .flag { font-size: 1.4rem; }
+
+    .header-meta {
+      margin-left : auto;
+      display     : flex;
+      align-items : center;
+      gap         : 12px;
+    }
+
+    .api-status {
+      display    : flex;
+      align-items: center;
+      gap        : 6px;
+      font-size  : 0.8rem;
+      color      : var(--muted);
+    }
+
+    .status-dot {
+      width        : 8px;
+      height       : 8px;
+      border-radius: 50%;
+      background   : var(--muted);
+      animation    : pulse 2s infinite;
+    }
+
+    .status-dot.online  { background: var(--green); }
+    .status-dot.offline { background: var(--red);   }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* ── Main Layout ─────────────────────────────────────── */
+    main {
+      max-width : 1200px;
+      margin    : 0 auto;
+      padding   : 32px 24px;
+      display   : grid;
+      grid-template-columns: 1fr 420px;
+      gap       : 24px;
+    }
+
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+    }
+
+    /* ── Cards ───────────────────────────────────────────── */
+    .card {
+      background   : var(--card);
+      border       : 1px solid var(--border);
+      border-radius: var(--radius);
+      padding      : 24px;
+    }
+
+    .card-title {
+      font-size  : 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color      : var(--muted);
+      margin-bottom: 20px;
+    }
+
+    /* ── Form ────────────────────────────────────────────── */
+    .form-grid {
+      display              : grid;
+      grid-template-columns: 1fr 1fr;
+      gap                  : 14px;
+    }
+
+    .form-group {
+      display       : flex;
+      flex-direction: column;
+      gap           : 6px;
+    }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size  : 0.78rem;
+      font-weight: 600;
+      color      : var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    input, select {
+      background   : #12151f;
+      border       : 1px solid var(--border);
+      border-radius: 8px;
+      color        : var(--text);
+      font-size    : 0.9rem;
+      padding      : 10px 12px;
+      transition   : border-color 0.2s;
+      width        : 100%;
+    }
+
+    input:focus, select:focus {
+      outline     : none;
+      border-color: var(--pink);
+    }
+
+    select option { background: #1a1d27; }
+
+    /* ── Scenario Presets ────────────────────────────────── */
+    .presets {
+      display  : flex;
+      gap      : 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .preset-btn {
+      background   : transparent;
+      border       : 1px solid var(--border);
+      border-radius: 20px;
+      color        : var(--muted);
+      cursor       : pointer;
+      font-size    : 0.78rem;
+      padding      : 6px 14px;
+      transition   : all 0.2s;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--pink);
+      color       : var(--text);
+    }
+
+    .preset-btn.active {
+      background  : var(--pink);
+      border-color: var(--pink);
+      color       : white;
+    }
+
+    /* ── Submit Button ───────────────────────────────────── */
+    .submit-btn {
+      background   : linear-gradient(135deg, var(--pink), #c2185b);
+      border       : none;
+      border-radius: 10px;
+      color        : white;
+      cursor       : pointer;
+      font-size    : 1rem;
+      font-weight  : 700;
+      margin-top   : 20px;
+      padding      : 14px;
+      transition   : opacity 0.2s, transform 0.1s;
+      width        : 100%;
+    }
+
+    .submit-btn:hover    { opacity: 0.9; }
+    .submit-btn:active   { transform: scale(0.98); }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Result Panel ────────────────────────────────────── */
+    .result-panel { position: sticky; top: 90px; }
+
+    /* Decision badge */
+    .decision-badge {
+      align-items  : center;
+      border-radius: var(--radius);
+      display      : flex;
+      flex-direction: column;
+      gap          : 8px;
+      margin-bottom: 24px;
+      padding      : 28px;
+      text-align   : center;
+    }
+
+    .decision-badge.approve {
+      background: rgba(76, 175, 80, 0.1);
+      border    : 2px solid var(--green);
+    }
+    .decision-badge.decline {
+      background: rgba(244, 67, 54, 0.1);
+      border    : 2px solid var(--red);
+    }
+    .decision-badge.review {
+      background: rgba(255, 152, 0, 0.1);
+      border    : 2px solid var(--orange);
+    }
+    .decision-badge.pending {
+      background: rgba(139, 143, 168, 0.1);
+      border    : 2px dashed var(--border);
+    }
+
+    .decision-icon { font-size: 2.8rem; }
+
+    .decision-text {
+      font-size  : 1.8rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+    }
+
+    .decision-badge.approve .decision-text { color: var(--green);  }
+    .decision-badge.decline .decision-text { color: var(--red);    }
+    .decision-badge.review  .decision-text { color: var(--orange); }
+    .decision-badge.pending .decision-text { color: var(--muted);  }
+
+    /* Score gauge */
+    .score-section { margin-bottom: 24px; }
+
+    .score-label {
+      display        : flex;
+      justify-content: space-between;
+      font-size      : 0.82rem;
+      color          : var(--muted);
+      margin-bottom  : 8px;
+    }
+
+    .score-value {
+      font-size  : 1.1rem;
+      font-weight: 700;
+      color      : var(--text);
+    }
+
+    .score-bar {
+      background   : #12151f;
+      border-radius: 6px;
+      height       : 12px;
+      overflow     : hidden;
+      position     : relative;
+    }
+
+    .score-fill {
+      border-radius: 6px;
+      height       : 100%;
+      transition   : width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      width        : 0%;
+    }
+
+    .score-fill.low    { background: linear-gradient(90deg, var(--green), #66BB6A); }
+    .score-fill.medium { background: linear-gradient(90deg, var(--orange), #FFA726); }
+    .score-fill.high   { background: linear-gradient(90deg, var(--red), #EF5350); }
+
+    .threshold-marker {
+      background: white;
+      height    : 100%;
+      left      : 53%;
+      position  : absolute;
+      top       : 0;
+      width     : 2px;
+      opacity   : 0.6;
+    }
+
+    /* Metrics grid */
+    .metrics-grid {
+      display              : grid;
+      gap                  : 10px;
+      grid-template-columns: 1fr 1fr;
+      margin-bottom        : 24px;
+    }
+
+    .metric-item {
+      background   : #12151f;
+      border       : 1px solid var(--border);
+      border-radius: 8px;
+      padding      : 12px;
+      text-align   : center;
+    }
+
+    .metric-label {
+      color    : var(--muted);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .metric-value {
+      font-size  : 1.05rem;
+      font-weight: 700;
+      margin-top : 4px;
+    }
+
+    /* Feature importance */
+    .feature-title {
+      color      : var(--muted);
+      font-size  : 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+
+    .feature-item {
+      margin-bottom: 10px;
+    }
+
+    .feature-header {
+      display        : flex;
+      justify-content: space-between;
+      font-size      : 0.82rem;
+      margin-bottom  : 4px;
+    }
+
+    .feature-name  { color: var(--text); }
+    .feature-score { color: var(--muted); font-size: 0.78rem; }
+
+    .feature-bar {
+      background   : #12151f;
+      border-radius: 4px;
+      height       : 6px;
+      overflow     : hidden;
+    }
+
+    .feature-fill {
+      background   : linear-gradient(90deg, var(--pink), var(--blue));
+      border-radius: 4px;
+      height       : 100%;
+      transition   : width 0.5s ease;
+    }
+
+    /* Loading spinner */
+    .spinner {
+      animation    : spin 0.8s linear infinite;
+      border       : 3px solid rgba(255,255,255,0.1);
+      border-radius: 50%;
+      border-top   : 3px solid white;
+      display      : inline-block;
+      height       : 18px;
+      margin-right : 8px;
+      width        : 18px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Error state */
+    .error-box {
+      background   : rgba(244, 67, 54, 0.1);
+      border       : 1px solid var(--red);
+      border-radius: 8px;
+      color        : #ef9a9a;
+      font-size    : 0.85rem;
+      padding      : 14px;
+      margin-top   : 16px;
+    }
+
+    /* History table */
+    .history-section {
+      grid-column: 1 / -1;
+      margin-top : 8px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width          : 100%;
+    }
+
+    th {
+      color         : var(--muted);
+      font-size     : 0.72rem;
+      font-weight   : 700;
+      padding       : 10px 12px;
+      text-align    : left;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-bottom : 1px solid var(--border);
+    }
+
+    td {
+      border-bottom: 1px solid var(--border);
+      font-size    : 0.85rem;
+      padding      : 10px 12px;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .badge {
+      border-radius: 20px;
+      font-size    : 0.72rem;
+      font-weight  : 700;
+      padding      : 3px 10px;
+      text-transform: uppercase;
+    }
+
+    .badge.approve { background: rgba(76,175,80,0.15);  color: var(--green);  }
+    .badge.decline { background: rgba(244,67,54,0.15);  color: var(--red);    }
+    .badge.review  { background: rgba(255,152,0,0.15);  color: var(--orange); }
+
+    .empty-history {
+      color     : var(--muted);
+      font-size : 0.85rem;
+      padding   : 24px;
+      text-align: center;
+    }
+
+    /* API endpoint display */
+    .endpoint-bar {
+      align-items  : center;
+      background   : #12151f;
+      border       : 1px solid var(--border);
+      border-radius: 8px;
+      display      : flex;
+      font-family  : monospace;
+      font-size    : 0.8rem;
+      gap          : 10px;
+      margin-bottom: 20px;
+      padding      : 10px 14px;
+    }
+
+    .method-badge {
+      background   : rgba(233,30,99,0.2);
+      border-radius: 4px;
+      color        : var(--pink);
+      font-weight  : 700;
+      padding      : 2px 8px;
+    }
+
+    .endpoint-url { color: var(--muted); }
+  </style>
+</head>
+
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────── -->
+<header>
+  <span class="flag">🇳🇬</span>
+  <span class="logo">NaijaShield</span>
+  <span style="color:var(--muted); font-size:0.85rem;">
+    Fraud Detection Platform
+  </span>
+
+  <div class="header-meta">
+    <div class="api-status">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">Checking API...</span>
+    </div>
+  </div>
+</header>
+
+<!-- ── Main ────────────────────────────────────────────────── -->
+<main>
+
+  <!-- ── LEFT: Transaction Form ──────────────────────────── -->
+  <div>
+
+    <!-- Scenario presets -->
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-title">Quick Scenarios</div>
+      <div class="presets">
+        <button class="preset-btn" onclick="loadPreset('high_risk')">
+          🚨 High Risk
+        </button>
+        <button class="preset-btn" onclick="loadPreset('account_takeover')">
+          👤 Account Takeover
+        </button>
+        <button class="preset-btn" onclick="loadPreset('normal_salary')">
+          ✅ Normal — Salary Earner
+        </button>
+        <button class="preset-btn" onclick="loadPreset('normal_student')">
+          ✅ Normal — Student
+        </button>
+        <button class="preset-btn" onclick="loadPreset('night_ussd')">
+          🌙 Night USSD
+        </button>
+        <button class="preset-btn" onclick="loadPreset('trader_large')">
+          💰 Trader Large Amount
+        </button>
+      </div>
+    </div>
+
+    <!-- Transaction form -->
+    <div class="card">
+      <div class="card-title">Transaction Details</div>
+
+      <!-- API endpoint display -->
+      <div class="endpoint-bar">
+        <span class="method-badge">POST</span>
+        <span class="endpoint-url" id="apiEndpointDisplay">
+          http://localhost:8000/predict
+        </span>
+      </div>
+
+      <form id="txnForm">
+        <div class="form-grid">
+
+          <!-- Transaction ID -->
+          <div class="form-group">
+            <label>Transaction ID</label>
+            <input type="text" id="transaction_id" value="T9999999" />
+          </div>
+
+          <!-- Sender Account -->
+          <div class="form-group">
+            <label>Sender Account</label>
+            <input type="text" id="sender_account" value="1000018177" />
+          </div>
+
+          <!-- Amount -->
+          <div class="form-group">
+            <label>Amount (NGN ₦)</label>
+            <input type="number" id="amount_ngn"
+                   value="250000" min="1" step="1" />
+          </div>
+
+          <!-- Timestamp -->
+          <div class="form-group">
+            <label>Timestamp</label>
+            <input type="datetime-local" id="timestamp" />
+          </div>
+
+          <!-- Payment Channel -->
+          <div class="form-group">
+            <label>Payment Channel</label>
+            <select id="payment_channel">
+              <option value="USSD">USSD</option>
+              <option value="Mobile App">Mobile App</option>
+              <option value="Card">Card</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+            </select>
+          </div>
+
+          <!-- Transaction Type -->
+          <div class="form-group">
+            <label>Transaction Type</label>
+            <select id="transaction_type">
+              <option value="payment">Payment</option>
+              <option value="withdrawal">Withdrawal</option>
+              <option value="deposit">Deposit</option>
+              <option value="transfer">Transfer</option>
+            </select>
+          </div>
+
+          <!-- Device Used -->
+          <div class="form-group">
+            <label>Device Used</label>
+            <select id="device_used">
+              <option value="mobile">Mobile</option>
+              <option value="web">Web</option>
+              <option value="atm">ATM</option>
+              <option value="pos">POS</option>
+            </select>
+          </div>
+
+          <!-- Location -->
+          <div class="form-group">
+            <label>Location</label>
+            <select id="location">
+              <option>Lagos</option>
+              <option>Abuja</option>
+              <option>Kano</option>
+              <option>Kaduna</option>
+              <option>Port Harcourt</option>
+              <option>Ibadan</option>
+              <option>Enugu</option>
+              <option>Benin City</option>
+              <option>Onitsha</option>
+              <option>Aba</option>
+            </select>
+          </div>
+
+          <!-- Geo Region -->
+          <div class="form-group">
+            <label>Geo Region</label>
+            <select id="ip_geo_region">
+              <option value="South West">South West</option>
+              <option value="South East">South East</option>
+              <option value="South South">South South</option>
+              <option value="North Central">North Central</option>
+              <option value="North West">North West</option>
+            </select>
+          </div>
+
+          <!-- Merchant Category -->
+          <div class="form-group">
+            <label>Merchant Category</label>
+            <select id="merchant_category">
+              <option>Bet9ja Stake</option>
+              <option>NairaBet Gaming</option>
+              <option>MTN Airtime Top-up</option>
+              <option>Airtel Data Bundle</option>
+              <option>Jumia Purchase</option>
+              <option>Konga Shopping</option>
+              <option>Uber Ride</option>
+              <option>Bolt Transport</option>
+              <option>Opay Transfer</option>
+              <option>PalmPay Service</option>
+              <option>Flutterwave Payment</option>
+            </select>
+          </div>
+
+          <!-- Sender Persona -->
+          <div class="form-group">
+            <label>Sender Persona</label>
+            <select id="sender_persona">
+              <option value="Salary Earner">Salary Earner</option>
+              <option value="Student">Student</option>
+              <option value="Trader">Trader</option>
+            </select>
+          </div>
+
+          <!-- BVN Linked -->
+          <div class="form-group">
+            <label>BVN Linked</label>
+            <select id="bvn_linked">
+              <option value="true">Yes — BVN Linked</option>
+              <option value="false">No — BVN Not Linked</option>
+            </select>
+          </div>
+
+          <!-- New Device -->
+          <div class="form-group">
+            <label>New Device Transaction</label>
+            <select id="new_device_transaction">
+              <option value="true">Yes — New Device</option>
+              <option value="false">No — Known Device</option>
+            </select>
+          </div>
+
+          <!-- User Avg Amount -->
+          <div class="form-group">
+            <label>User Avg Txn Amount (₦)</label>
+            <input type="number" id="user_avg_txn_amt"
+                   value="45000" min="0" />
+          </div>
+
+          <!-- User Std Amount -->
+          <div class="form-group">
+            <label>User Std Txn Amount (₦)</label>
+            <input type="number" id="user_std_txn_amt"
+                   value="12000" min="0" />
+          </div>
+
+          <!-- User Total Count -->
+          <div class="form-group">
+            <label>User Total Txn Count</label>
+            <input type="number" id="user_txn_count_total"
+                   value="5" min="0" />
+          </div>
+
+          <!-- Txn Count Last 1h -->
+          <div class="form-group">
+            <label>Txn Count Last 1h</label>
+            <input type="number" id="txn_count_last_1h"
+                   value="1" min="0" />
+          </div>
+
+          <!-- Avg Gap -->
+          <div class="form-group">
+            <label>Avg Gap Between Txns (min)</label>
+            <input type="number" id="avg_gap_between_txns"
+                   value="-1" step="0.1" />
+          </div>
+
+          <!-- Device Seen Count -->
+          <div class="form-group">
+            <label>Device Seen Count</label>
+            <input type="number" id="device_seen_count"
+                   value="1" min="1" />
+          </div>
+
+          <!-- IP Seen Count -->
+          <div class="form-group">
+            <label>IP Seen Count</label>
+            <input type="number" id="ip_seen_count"
+                   value="5" min="1" />
+          </div>
+
+          <!-- Spending Deviation -->
+          <div class="form-group">
+            <label>Spending Deviation Score</label>
+            <input type="number" id="spending_deviation_score"
+                   value="1.2" step="0.1" />
+          </div>
+
+          <!-- Velocity Score -->
+          <div class="form-group">
+            <label>Velocity Score</label>
+            <input type="number" id="velocity_score"
+                   value="3" min="0" max="20" />
+          </div>
+
+          <!-- Geo Anomaly Score -->
+          <div class="form-group">
+            <label>Geo Anomaly Score</label>
+            <input type="number" id="geo_anomaly_score"
+                   value="0.0" step="0.01" min="0" />
+          </div>
+
+          <!-- Time Since Last -->
+          <div class="form-group">
+            <label>Time Since Last Txn (min)</label>
+            <input type="number" id="time_since_last_transaction"
+                   value="-1" step="0.1" />
+          </div>
+
+          <!-- Time Since Last (alt) -->
+          <div class="form-group">
+            <label>Time Since Last (alt)</label>
+            <input type="number" id="time_since_last"
+                   value="-1" step="0.1" />
+          </div>
+
+        </div><!-- end form-grid -->
+
+        <button type="submit" class="submit-btn" id="submitBtn">
+          🔍 Score Transaction
+        </button>
+
+        <div id="errorBox" class="error-box" style="display:none;"></div>
+
+      </form>
+    </div><!-- end card -->
+  </div><!-- end left column -->
+
+
+  <!-- ── RIGHT: Result Panel ─────────────────────────────── -->
+  <div class="result-panel">
+    <div class="card">
+      <div class="card-title">Fraud Score Result</div>
+
+      <!-- Decision badge -->
+      <div class="decision-badge pending" id="decisionBadge">
+        <div class="decision-icon">⏳</div>
+        <div class="decision-text">AWAITING</div>
+        <div style="color:var(--muted); font-size:0.8rem;">
+          Submit a transaction to score
+        </div>
+      </div>
+
+      <!-- Score gauge -->
+      <div class="score-section">
+        <div class="score-label">
+          <span>Fraud Probability</span>
+          <span class="score-value" id="scoreValue">—</span>
+        </div>
+        <div class="score-bar">
+          <div class="score-fill" id="scoreFill"></div>
+          <div class="threshold-marker" title="Decision threshold"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between;
+                    font-size:0.7rem; color:var(--muted); margin-top:4px;">
+          <span>0.0 — Legitimate</span>
+          <span>Threshold</span>
+          <span>1.0 — Fraud</span>
+        </div>
+      </div>
+
+      <!-- Metrics -->
+      <div class="metrics-grid">
+        <div class="metric-item">
+          <div class="metric-label">Latency</div>
+          <div class="metric-value" id="metricLatency">—</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Threshold</div>
+          <div class="metric-value" id="metricThreshold">—</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Model Version</div>
+          <div class="metric-value" id="metricVersion"
+               style="font-size:0.85rem;">—</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Transaction ID</div>
+          <div class="metric-value" id="metricTxnId"
+               style="font-size:0.8rem;">—</div>
+        </div>
+      </div>
+
+      <!-- Feature importance -->
+      <div id="featureSection" style="display:none;">
+        <div class="feature-title">Top Features Driving Decision</div>
+        <div id="featureList"></div>
+      </div>
+
+    </div><!-- end card -->
+  </div><!-- end result panel -->
+
+
+  <!-- ── BOTTOM: Prediction History ──────────────────────── -->
+  <div class="card history-section">
+    <div class="card-title">
+      Prediction History
+      <button onclick="clearHistory()"
+              style="float:right; background:transparent; border:1px solid
+                     var(--border); border-radius:6px; color:var(--muted);
+                     cursor:pointer; font-size:0.72rem; padding:3px 10px;">
+        Clear
+      </button>
+    </div>
+
+    <div id="historyContainer">
+      <div class="empty-history">
+        No predictions yet — submit a transaction above
+      </div>
+    </div>
+  </div>
+
+</main>
+
+
+<script>
+// ============================================================
+// NaijaShield Frontend JavaScript
+// ============================================================
+
+const API_BASE = 'http://localhost:8000';
+let predictionHistory = [];
+
+// ── Preset Scenarios ─────────────────────────────────────────
+const PRESETS = {
+  high_risk: {
+    transaction_id:             'T-HIGH-RISK-001',
+    amount_ngn:                 1850000,
+    payment_channel:            'USSD',
+    transaction_type:           'withdrawal',
+    device_used:                'mobile',
+    location:                   'Lagos',
+    ip_geo_region:              'South West',
+    merchant_category:          'Bet9ja Stake',
+    bvn_linked:                 'false',
+    new_device_transaction:     'true',
+    sender_persona:             'Trader',
+    user_avg_txn_amt:           45000,
+    user_std_txn_amt:           12000,
+    user_txn_count_total:       2,
+    txn_count_last_1h:          7,
+    avg_gap_between_txns:       -1,
+    device_seen_count:          1,
+    ip_seen_count:              3,
+    spending_deviation_score:   18.9,
+    velocity_score:             15,
+    geo_anomaly_score:          0.8,
+    time_since_last_transaction:-1,
+    time_since_last:            -1,
+  },
+
+  account_takeover: {
+    transaction_id:             'T-ATO-001',
+    amount_ngn:                 950000,
+    payment_channel:            'Mobile App',
+    transaction_type:           'transfer',
+    device_used:                'mobile',
+    location:                   'Kano',
+    ip_geo_region:              'North West',
+    merchant_category:          'Opay Transfer',
+    bvn_linked:                 'true',
+    new_device_transaction:     'true',
+    sender_persona:             'Salary Earner',
+    user_avg_txn_amt:           85000,
+    user_std_txn_amt:           22000,
+    user_txn_count_total:       1,
+    txn_count_last_1h:          5,
+    avg_gap_between_txns:       -1,
+    device_seen_count:          1,
+    ip_seen_count:              8,
+    spending_deviation_score:   11.2,
+    velocity_score:             12,
+    geo_anomaly_score:          0.4,
+    time_since_last_transaction:-1,
+    time_since_last:            -1,
+  },
+
+  normal_salary: {
+    transaction_id:             'T-NORMAL-SAL-001',
+    amount_ngn:                 45000,
+    payment_channel:            'Bank Transfer',
+    transaction_type:           'payment',
+    device_used:                'mobile',
+    location:                   'Lagos',
+    ip_geo_region:              'South West',
+    merchant_category:          'MTN Airtime Top-up',
+    bvn_linked:                 'true',
+    new_device_transaction:     'false',
+    sender_persona:             'Salary Earner',
+    user_avg_txn_amt:           48000,
+    user_std_txn_amt:           8000,
+    user_txn_count_total:       18,
+    txn_count_last_1h:          1,
+    avg_gap_between_txns:       1440,
+    device_seen_count:          5,
+    ip_seen_count:              12,
+    spending_deviation_score:   0.9,
+    velocity_score:             1,
+    geo_anomaly_score:          0.0,
+    time_since_last_transaction:1440,
+    time_since_last:            1440,
+  },
+
+  normal_student: {
+    transaction_id:             'T-NORMAL-STU-001',
+    amount_ngn:                 3500,
+    payment_channel:            'Mobile App',
+    transaction_type:           'payment',
+    device_used:                'mobile',
+    location:                   'Enugu',
+    ip_geo_region:              'South East',
+    merchant_category:          'Airtel Data Bundle',
+    bvn_linked:                 'true',
+    new_device_transaction:     'false',
+    sender_persona:             'Student',
+    user_avg_txn_amt:           4200,
+    user_std_txn_amt:           1800,
+    user_txn_count_total:       12,
+    txn_count_last_1h:          1,
+    avg_gap_between_txns:       720,
+    device_seen_count:          3,
+    ip_seen_count:              9,
+    spending_deviation_score:   0.8,
+    velocity_score:             1,
+    geo_anomaly_score:          0.0,
+    time_since_last_transaction:720,
+    time_since_last:            720,
+  },
+
+  night_ussd: {
+    transaction_id:             'T-NIGHT-USSD-001',
+    amount_ngn:                 380000,
+    payment_channel:            'USSD',
+    transaction_type:           'withdrawal',
+    device_used:                'mobile',
+    location:                   'Abuja',
+    ip_geo_region:              'North Central',
+    merchant_category:          'Flutterwave Payment',
+    bvn_linked:                 'false',
+    new_device_transaction:     'true',
+    sender_persona:             'Trader',
+    user_avg_txn_amt:           55000,
+    user_std_txn_amt:           18000,
+    user_txn_count_total:       3,
+    txn_count_last_1h:          4,
+    avg_gap_between_txns:       -1,
+    device_seen_count:          1,
+    ip_seen_count:              5,
+    spending_deviation_score:   6.9,
+    velocity_score:             10,
+    geo_anomaly_score:          0.3,
+    time_since_last_transaction:-1,
+    time_since_last:            -1,
+  },
+
+  trader_large: {
+    transaction_id:             'T-TRADER-LG-001',
+    amount_ngn:                 2500000,
+    payment_channel:            'Bank Transfer',
+    transaction_type:           'transfer',
+    device_used:                'web',
+    location:                   'Onitsha',
+    ip_geo_region:              'South East',
+    merchant_category:          'Flutterwave Payment',
+    bvn_linked:                 'true',
+    new_device_transaction:     'false',
+    sender_persona:             'Trader',
+    user_avg_txn_amt:           1800000,
+    user_std_txn_amt:           650000,
+    user_txn_count_total:       21,
+    txn_count_last_1h:          2,
+    avg_gap_between_txns:       360,
+    device_seen_count:          4,
+    ip_seen_count:              15,
+    spending_deviation_score:   1.4,
+    velocity_score:             3,
+    geo_anomaly_score:          0.0,
+    time_since_last_transaction:360,
+    time_since_last:            360,
+  },
+};
+
+// ── Load Preset ───────────────────────────────────────────────
+function loadPreset(name) {
+  const preset = PRESETS[name];
+  if (!preset) return;
+
+  // Update all form fields
+  Object.entries(preset).forEach(([key, value]) => {
+    const el = document.getElementById(key);
+    if (el) el.value = value;
+  });
+
+  // Update timestamp to now
+  setTimestamp(name);
+
+  // Highlight active preset
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  event.target.classList.add('active');
+}
+
+function setTimestamp(preset) {
+  const now = new Date();
+  // Night presets: set to 2am
+  if (preset === 'night_ussd' || preset === 'high_risk') {
+    now.setHours(2, 30, 0);
+  }
+  const ts = now.toISOString().slice(0, 16);
+  document.getElementById('timestamp').value = ts;
+}
+
+// ── Form Submission ───────────────────────────────────────────
+document.getElementById('txnForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  await submitTransaction();
+});
+
+async function submitTransaction() {
+  const btn = document.getElementById('submitBtn');
+  const errorBox = document.getElementById('errorBox');
+
+  // Loading state
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Scoring...';
+  errorBox.style.display = 'none';
+
+  // Build payload
+  const payload = buildPayload();
+
+  try {
+    const response = await fetch(`${API_BASE}/predict`, {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || `HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+    displayResult(result);
+    addToHistory(payload, result);
+
+  } catch (err) {
+    errorBox.textContent = `❌ Error: ${err.message}`;
+    errorBox.style.display = 'block';
+    console.error('Prediction error:', err);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔍 Score Transaction';
+  }
+}
+
+// ── Build API Payload ─────────────────────────────────────────
+function buildPayload() {
+  const ts = document.getElementById('timestamp').value;
+
+  return {
+    transaction_id:              document.getElementById('transaction_id').value,
+    sender_account:              document.getElementById('sender_account').value,
+    amount_ngn:                  parseFloat(document.getElementById('amount_ngn').value),
+    timestamp:                   ts ? new Date(ts).toISOString() : new Date().toISOString(),
+    payment_channel:             document.getElementById('payment_channel').value,
+    transaction_type:            document.getElementById('transaction_type').value,
+    device_used:                 document.getElementById('device_used').value,
+    location:                    document.getElementById('location').value,
+    ip_geo_region:               document.getElementById('ip_geo_region').value,
+    merchant_category:           document.getElementById('merchant_category').value,
+    bvn_linked:                  document.getElementById('bvn_linked').value === 'true',
+    new_device_transaction:      document.getElementById('new_device_transaction').value === 'true',
+    sender_persona:              document.getElementById('sender_persona').value,
+    user_avg_txn_amt:            parseFloat(document.getElementById('user_avg_txn_amt').value),
+    user_std_txn_amt:            parseFloat(document.getElementById('user_std_txn_amt').value),
+    user_txn_count_total:        parseInt(document.getElementById('user_txn_count_total').value),
+    txn_count_last_1h:           parseInt(document.getElementById('txn_count_last_1h').value),
+    avg_gap_between_txns:        parseFloat(document.getElementById('avg_gap_between_txns').value),
+    device_seen_count:           parseInt(document.getElementById('device_seen_count').value),
+    ip_seen_count:               parseInt(document.getElementById('ip_seen_count').value),
+    spending_deviation_score:    parseFloat(document.getElementById('spending_deviation_score').value),
+    velocity_score:              parseInt(document.getElementById('velocity_score').value),
+    geo_anomaly_score:           parseFloat(document.getElementById('geo_anomaly_score').value),
+    time_since_last_transaction: parseFloat(document.getElementById('time_since_last_transaction').value),
+    time_since_last:             parseFloat(document.getElementById('time_since_last').value),
+  };
+}
+
+// ── Display Result ────────────────────────────────────────────
+function displayResult(result) {
+  const badge     = document.getElementById('decisionBadge');
+  const scoreFill = document.getElementById('scoreFill');
+  const scoreVal  = document.getElementById('scoreValue');
+
+  const score    = result.fraud_score;
+  const decision = result.decision.toLowerCase();
+
+  // Decision badge
+  badge.className = `decision-badge ${decision}`;
+  const icons = { approve: '✅', decline: '🚫', review: '⚠️' };
+  badge.innerHTML = `
+    <div class="decision-icon">${icons[decision] || '?'}</div>
+    <div class="decision-text">${result.decision}</div>
+    <div style="color:var(--muted); font-size:0.8rem;">
+      Score: ${score.toFixed(4)}
+    </div>
+  `;
+
+  // Score bar
+  const pct = Math.round(score * 100);
+  scoreFill.style.width = `${pct}%`;
+  scoreFill.className = 'score-fill ' + (
+    score < 0.3  ? 'low'    :
+    score < 0.53 ? 'medium' : 'high'
+  );
+  scoreVal.textContent = score.toFixed(4);
+
+  // Metrics
+  document.getElementById('metricLatency').textContent =
+    `${result.latency_ms.toFixed(1)}ms`;
+  document.getElementById('metricThreshold').textContent =
+    result.threshold_used.toFixed(2);
+  document.getElementById('metricVersion').textContent =
+    result.model_version;
+  document.getElementById('metricTxnId').textContent =
+    result.transaction_id;
+
+  // Feature importance
+  const featSection = document.getElementById('featureSection');
+  const featList    = document.getElementById('featureList');
+  const explanation = result.explanation || {};
+
+  if (Object.keys(explanation).length > 0) {
+    const maxImportance = Math.max(
+      ...Object.values(explanation).map(f => f.importance)
+    );
+
+    featList.innerHTML = Object.entries(explanation)
+      .sort(([,a],[,b]) => b.importance - a.importance)
+      .map(([name, data]) => {
+        const pct = maxImportance > 0
+          ? (data.importance / maxImportance * 100).toFixed(0)
+          : 0;
+        const displayName = name.replace(/_/g, ' ')
+          .replace(/\b\w/g, l => l.toUpperCase());
+        return `
+          <div class="feature-item">
+            <div class="feature-header">
+              <span class="feature-name">${displayName}</span>
+              <span class="feature-score">
+                val=${data.value.toFixed(2)} |
+                imp=${data.importance.toFixed(4)}
+              </span>
+            </div>
+            <div class="feature-bar">
+              <div class="feature-fill" style="width:${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+    featSection.style.display = 'block';
+  }
+}
+
+// ── Prediction History ────────────────────────────────────────
+function addToHistory(payload, result) {
+  predictionHistory.unshift({ payload, result, time: new Date() });
+  if (predictionHistory.length > 20) predictionHistory.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const container = document.getElementById('historyContainer');
+
+  if (predictionHistory.length === 0) {
+    container.innerHTML = `
+      <div class="empty-history">
+        No predictions yet — submit a transaction above
+      </div>`;
+    return;
+  }
+
+  const rows = predictionHistory.map(({ payload, result, time }) => {
+    const dec = result.decision.toLowerCase();
+    const amt = new Intl.NumberFormat('en-NG', {
+      style: 'currency', currency: 'NGN', maximumFractionDigits: 0
+    }).format(payload.amount_ngn);
+
+    return `
+      <tr>
+        <td>${time.toLocaleTimeString()}</td>
+        <td>${result.transaction_id}</td>
+        <td>${amt}</td>
+        <td>${payload.payment_channel}</td>
+        <td>${payload.location}</td>
+        <td>
+          ${payload.new_device_transaction
+            ? '<span style="color:var(--red)">New</span>'
+            : '<span style="color:var(--green)">Known</span>'}
+        </td>
+        <td>${result.fraud_score.toFixed(4)}</td>
+        <td><span class="badge ${dec}">${result.decision}</span></td>
+        <td>${result.latency_ms.toFixed(1)}ms</td>
+      </tr>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Txn ID</th>
+          <th>Amount</th>
+          <th>Channel</th>
+          <th>Location</th>
+          <th>Device</th>
+          <th>Score</th>
+          <th>Decision</th>
+          <th>Latency</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function clearHistory() {
+  predictionHistory = [];
+  renderHistory();
+}
+
+// ── API Health Check ──────────────────────────────────────────
+async function checkApiHealth() {
+  const dot  = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+
+  try {
+    const res = await fetch(`${API_BASE}/health`, {
+      signal: AbortSignal.timeout(3000)
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      dot.className  = 'status-dot online';
+      text.textContent = `API Online • v${data.model_version}`;
+    } else {
+      throw new Error('API unhealthy');
+    }
+  } catch {
+    dot.className  = 'status-dot offline';
+    text.textContent = 'API Offline';
+  }
+}
+
+// ── Initialise ────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Set default timestamp to now
+  const now = new Date();
+  document.getElementById('timestamp').value =
+    now.toISOString().slice(0, 16);
+
+  // Check API health every 30 seconds
+  checkApiHealth();
+  setInterval(checkApiHealth, 30000);
+});
+</script>
+
+</body>
+</html>

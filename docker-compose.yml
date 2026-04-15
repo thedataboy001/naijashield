@@ -1,0 +1,147 @@
+# ============================================================
+# docker-compose.yml
+# NaijaShield — Full Stack Fraud Detection Platform
+# ============================================================
+# Services:
+#   - naijashield-api    : FastAPI inference server
+#   - mlflow-server      : Experiment tracking UI
+#   - prometheus         : Metrics collection
+#   - grafana            : Dashboard visualization
+#   - evidently-service  : Drift monitoring reports
+# ============================================================
+
+# version: "3.9"
+
+networks:
+  naijashield-network:
+    driver: bridge
+
+volumes:
+  mlflow-data:
+  prometheus-data:
+  grafana-data:
+  evidently-data:
+
+services:
+
+  # ══════════════════════════════════════════════════════════
+  # INFERENCE API
+  # ══════════════════════════════════════════════════════════
+  naijashield-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: naijashield-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models:ro        # Read-only model files
+      - ./data/processed:/app/data/processed:ro
+      - ./src/serving:/app/src/serving # Live reload in dev
+    environment:
+      - ENV=development
+      - LOG_LEVEL=info
+      - MODEL_PATH=/app/models/best_model.joblib
+      - CONFIG_PATH=/app/models/model_config.json
+      - MLFLOW_TRACKING_URI=http://mlflow-server:5001
+    networks:
+      - naijashield-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    depends_on:
+      - mlflow-server
+
+  # ══════════════════════════════════════════════════════════
+  # MLFLOW TRACKING SERVER
+  # ══════════════════════════════════════════════════════════
+  mlflow-server:
+    image: python:3.10-slim
+    container_name: mlflow-server
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./notebooks/mlruns.db:/mlflow/mlruns.db
+      - mlflow-data:/mlflow/artifacts
+    command: >
+      bash -c "pip install mlflow --quiet &&
+               mlflow server
+               --backend-store-uri sqlite:////mlflow/mlruns.db
+               --default-artifact-root /mlflow/artifacts
+               --host 0.0.0.0
+               --port 5001"
+    networks:
+      - naijashield-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  # ══════════════════════════════════════════════════════════
+  # PROMETHEUS — Metrics Collection
+  # ══════════════════════════════════════════════════════════
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--storage.tsdb.retention.time=15d"
+    networks:
+      - naijashield-network
+    restart: unless-stopped
+
+  # ══════════════════════════════════════════════════════════
+  # GRAFANA — Dashboards
+  # ══════════════════════════════════════════════════════════
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infrastructure/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_DOMAIN=localhost
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+    networks:
+      - naijashield-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # ══════════════════════════════════════════════════════════
+  # FRONTEND — Static HTML Test Interface
+  # ══════════════════════════════════════════════════════════
+  frontend:
+    image: nginx:alpine
+    container_name: naijashield-frontend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - naijashield-network
+    depends_on:
+      - naijashield-api
+    restart: unless-stopped

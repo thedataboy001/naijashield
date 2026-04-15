@@ -8,3 +8,43 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Logs and databases
+*.log
+*.db
+*.sqlite
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Large data files
+*.csv
+*.xlsx
+*.xls
+*.json
+data/
+datasets/
+raw_data/
+
+# Model files
+*.pkl
+*.pickle
+*.h5
+*.joblib
+*.model
+models/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+
+# Cache files
+.cache/
+*.cache

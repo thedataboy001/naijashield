@@ -1,0 +1,20 @@
+# ============================================================
+# prometheus.yml — Metrics Scraping Configuration
+# ============================================================
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: "naijashield"
+
+scrape_configs:
+
+  - job_name: "naijashield-api"
+    static_configs:
+      - targets: ["naijashield-api:8000"]
+    metrics_path: "/metrics"
+    scrape_interval: 10s
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

@@ -6,9 +6,17 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "datasets>=4.8.4",
+    "evidently>=0.7.21",
+    "imblearn>=0.0",
+    "lightgbm>=4.6.0",
     "matplotlib>=3.10.8",
+    "mlflow>=3.11.1",
     "numpy>=2.4.4",
     "panda>=0.3.1",
+    "prometheus-client>=0.25.0",
+    "scikit-learn>=1.8.0",
     "scipy>=1.17.1",
     "seaborn>=0.13.2",
+    "shap>=0.51.0",
+    "xgboost>=3.2.0",
 ]
